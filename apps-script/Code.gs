@@ -40,7 +40,7 @@ var CONFIG = {
 // ============================================================
 // CONFIGURAÇÃO DO ORÇAMENTO MENSAL
 // ============================================================
-const CONFIG_ORCAMENTO = {
+var CONFIG_ORCAMENTO = {
   receita: {
     salario:  { label: "Salário",            valor: 11000 },
     comissao: { label: "Comissão de Vendas", valor: 3500  },
