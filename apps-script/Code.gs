@@ -230,14 +230,17 @@ function configurarSistema() {
   setupSheet(ss);        // Lançamentos + Config + Resumo
   criarAbaOrcamento(ss); // Aba detalhada de orçamento por categoria
   criarPainelVisual(ss); // Painel lateral na aba Lançamentos (colunas I–M)
+  SpreadsheetApp.flush();
   criarMenu();
 
-  SpreadsheetApp.getUi().alert(
-    '✅ Sistema configurado!\n\n' +
-    '• Aba "Lançamentos" pronta para receber dados do Shortcut\n' +
-    '• Aba "Orçamento" com detalhamento por categoria\n' +
-    '• Painel visual na aba principal (colunas I–M)\n' +
-    '• Menu "💰 Orçamento" disponível na barra superior'
+  // toast() é não-bloqueante — não trava a execução esperando o usuário clicar OK
+  ss.toast(
+    '• Aba "Lançamentos" pronta para o Shortcut\n' +
+    '• Aba "Orçamento" com detalhamento\n' +
+    '• Painel visual nas colunas I–M\n' +
+    '• Menu "💰 Orçamento" disponível',
+    '✅ Sistema configurado!',
+    10
   );
 }
 
@@ -457,7 +460,7 @@ function criarAbaOrcamento(ss) {
     const subLabels = cat.subcategorias.map(s => ["      • " + s.nome]);
     const subVals   = cat.subcategorias.map(s => [s.valor]);
     const nSub = subLabels.length;
-    for (let r = 0; r < nSub; r++) aba.setRowHeight(linha + r, 26);
+    aba.setRowHeights(linha, nSub, 26); // 1 chamada para todas as linhas da categoria
     aba.getRange(linha, 2, nSub, 1).setValues(subLabels)
       .setFontSize(10).setFontColor(COR.cinzaTexto).setBackground(COR.fundoSub).setVerticalAlignment("middle");
     aba.getRange(linha, 3, nSub, 1).setValues(subVals)
@@ -594,7 +597,6 @@ function criarPainelVisual(ss) {
   const primeiraLinhaCategoria = linha;
 
   CONFIG_ORCAMENTO.categorias.forEach(cat => {
-    abaMain.setRowHeight(linha, 32);
     abaMain.getRange(linha, COL + 1).setValue(cat.nome)
       .setFontSize(10).setFontWeight("bold")
       .setFontColor(COR.texto).setBackground(COR.fundo).setVerticalAlignment("middle");
@@ -738,7 +740,7 @@ function atualizarPainel() {
     return;
   }
   SpreadsheetApp.flush();
-  SpreadsheetApp.getUi().alert("✅ Painel atualizado!\nDados refletem todos os lançamentos do mês atual.");
+  SpreadsheetApp.getActiveSpreadsheet().toast("Dados refletem todos os lançamentos do mês atual.", "✅ Painel atualizado!", 5);
 }
 
 function irParaOrcamento() {
@@ -800,5 +802,5 @@ function instalarTriggerDiario() {
   ScriptApp.newTrigger("atualizarPainel")
     .timeBased().atHour(7).everyDays(1)
     .inTimezone("America/Sao_Paulo").create();
-  SpreadsheetApp.getUi().alert("✅ Trigger diário instalado! Painel atualizado todos os dias às 7h.");
+  SpreadsheetApp.getActiveSpreadsheet().toast("Painel será atualizado automaticamente todos os dias às 7h.", "✅ Trigger diário instalado!", 8);
 }
