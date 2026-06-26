@@ -1,0 +1,88 @@
+{
+  "nome": "💰 Lançar Gasto",
+  "descricao": "Registra um lançamento financeiro diretamente no Google Sheets via Apps Script.",
+  "icone": "dollarsign.circle.fill",
+  "cor": "green",
+  "passos": [
+    {
+      "passo": 1,
+      "acao": "Escolher na lista",
+      "titulo": "Tipo do lançamento",
+      "prompt": "Tipo",
+      "opcoes": ["Despesa", "Receita"],
+      "variavel_saida": "tipo"
+    },
+    {
+      "passo": 2,
+      "acao": "Escolher na lista",
+      "titulo": "Categoria",
+      "prompt": "Categoria",
+      "opcoes": ["Alimentação", "Transporte", "Lazer", "Saúde", "Casa", "Outros"],
+      "variavel_saida": "categoria"
+    },
+    {
+      "passo": 3,
+      "acao": "Pedir texto",
+      "titulo": "Descrição (opcional)",
+      "prompt": "Ex: Almoço no restaurante",
+      "teclado": "default",
+      "obrigatorio": false,
+      "variavel_saida": "descricao"
+    },
+    {
+      "passo": 4,
+      "acao": "Pedir número",
+      "titulo": "Valor (R$)",
+      "prompt": "0,00",
+      "teclado": "decimal",
+      "obrigatorio": true,
+      "variavel_saida": "valor"
+    },
+    {
+      "passo": 5,
+      "acao": "Escolher na lista",
+      "titulo": "Forma de pagamento",
+      "prompt": "Como pagou?",
+      "opcoes": ["Pix", "Débito", "Crédito", "Dinheiro"],
+      "variavel_saida": "forma_pagamento"
+    },
+    {
+      "passo": 6,
+      "acao": "Obter conteúdo de URL",
+      "metodo": "POST",
+      "url": "COLE_AQUI_A_URL_DO_WEB_APP",
+      "cabecalhos": {
+        "Content-Type": "application/json"
+      },
+      "corpo": {
+        "token": "TROQUE_POR_UM_TOKEN_SECRETO",
+        "tipo": "{{tipo}}",
+        "categoria": "{{categoria}}",
+        "descricao": "{{descricao}}",
+        "valor": "{{valor}}",
+        "forma_pagamento": "{{forma_pagamento}}"
+      },
+      "variavel_saida": "resposta"
+    },
+    {
+      "passo": 7,
+      "acao": "Se (condicional)",
+      "condicao": "resposta contém 'ok'",
+      "entao": {
+        "acao": "Mostrar notificação",
+        "titulo": "✅ Lançamento salvo!",
+        "corpo": "{{tipo}} · {{categoria}} · R$ {{valor}}"
+      },
+      "senao": {
+        "acao": "Mostrar alerta",
+        "mensagem": "Erro ao salvar: {{resposta}}"
+      }
+    }
+  ],
+  "dicas": [
+    "Adicione o Shortcut à tela inicial do iPhone para acesso com 1 toque.",
+    "No passo 6, substitua 'COLE_AQUI_A_URL_DO_WEB_APP' pela URL gerada no deploy do Apps Script.",
+    "O token no passo 6 deve ser idêntico ao definido em CONFIG.token no Code.gs.",
+    "Você pode duplicar esse Shortcut e pré-selecionar uma categoria para gastos frequentes (ex: '☕ Café')."
+  ]
+}
