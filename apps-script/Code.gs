@@ -22,7 +22,7 @@ var CONFIG = {
   sheetLancamentos: "Lançamentos",
   sheetResumo: "Resumo",
   sheetConfig: "Config",
-  // Deve espelhar exatamente os nomes em CONFIG_ORCAMENTO.categorias
+  // Categorias de DESPESA — espelha CONFIG_ORCAMENTO.categorias
   categorias: [
     "Saúde",
     "Alimentação",
@@ -33,6 +33,14 @@ var CONFIG = {
     "Dízimos e Ofertas",
     "Assinaturas",
     "Educação"
+  ],
+  // Categorias de RECEITA — adicione aqui para expandir no Shortcut
+  categoriasReceita: [
+    "Salário",
+    "Comissão de Vendas",
+    "Freelance / Extra",
+    "Bônus",
+    "Outros"
   ],
   formasPagamento: ["Pix", "Débito", "Crédito", "Dinheiro"],
   classificacoes: ["Necessidade", "Desejo"]
@@ -199,8 +207,9 @@ function validar(payload) {
   if (!payload.tipo || !["Receita", "Despesa"].includes(payload.tipo)) {
     erros.push("'tipo' deve ser 'Receita' ou 'Despesa'");
   }
-  if (!payload.categoria || !CONFIG.categorias.includes(payload.categoria)) {
-    erros.push("'categoria' inválida. Opções: " + CONFIG.categorias.join(", "));
+  var listaCat = payload.tipo === "Receita" ? CONFIG.categoriasReceita : CONFIG.categorias;
+  if (!payload.categoria || !listaCat.includes(payload.categoria)) {
+    erros.push("'categoria' inválida para " + (payload.tipo || "este tipo") + ". Opções: " + listaCat.join(", "));
   }
   var valorNorm = String(payload.valor).replace(",", ".");
   if (!payload.valor || isNaN(Number(valorNorm)) || Number(valorNorm) <= 0) {
@@ -269,17 +278,21 @@ function setupSheet(ss) {
   headerRange.setFontWeight("bold").setBackground("#4A90D9").setFontColor("#FFFFFF");
   lancamentos.setFrozenRows(1);
 
-  // Aba Config — batch único
+  // Aba Config — batch único com 3 colunas
   var config = ss.getSheetByName(CONFIG.sheetConfig) ||
                ss.insertSheet(CONFIG.sheetConfig);
   config.clearContents();
-  var maxRows = Math.max(CONFIG.categorias.length, CONFIG.formasPagamento.length);
-  var configData = [["Categorias", "Formas de Pagamento"]];
+  var maxRows = Math.max(CONFIG.categorias.length, CONFIG.categoriasReceita.length, CONFIG.formasPagamento.length);
+  var configData = [["Categorias Despesa", "Categorias Receita", "Formas de Pagamento"]];
   for (var i = 0; i < maxRows; i++) {
-    configData.push([CONFIG.categorias[i] || "", CONFIG.formasPagamento[i] || ""]);
+    configData.push([
+      CONFIG.categorias[i]        || "",
+      CONFIG.categoriasReceita[i] || "",
+      CONFIG.formasPagamento[i]   || ""
+    ]);
   }
-  config.getRange(1, 1, configData.length, 2).setValues(configData);
-  config.getRange(1, 1, 1, 2).setFontWeight("bold");
+  config.getRange(1, 1, configData.length, 3).setValues(configData);
+  config.getRange(1, 1, 1, 3).setFontWeight("bold");
 
   // Aba Resumo
   var resumo = ss.getSheetByName(CONFIG.sheetResumo) ||
@@ -303,8 +316,14 @@ function setupResumo(sheet) {
   ];
   categorias.forEach(function(cat) { labels.push([cat, ""]); });
 
-  // ── Bloco 2: separador + Necessidades × Desejos ──
-  var linhaND = labels.length + 2; // linha de início do bloco ND (1-indexed, com espaço)
+  // ── Bloco 2: separador + Receitas por categoria ──
+  var linhaRec = labels.length + 2;
+  labels.push(["", ""]);
+  labels.push(["📈 RECEITAS POR CATEGORIA (mês atual)", ""]);
+  CONFIG.categoriasReceita.forEach(function(cat) { labels.push([cat, ""]); });
+
+  // ── Bloco 3: separador + Necessidades × Desejos ──
+  var linhaND = labels.length + 2;
   labels.push(["", ""]);
   labels.push(["💡 NECESSIDADES × DESEJOS", ""]);
   labels.push(["Necessidades", ""]);
@@ -321,11 +340,17 @@ function setupResumo(sheet) {
     ['=B3-B4']
   ]);
 
-  // Fórmulas por categoria (em lote)
+  // Fórmulas por categoria de despesa (em lote)
   var catFormulas = categorias.map(function(cat) {
     return ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Despesa")*(Lançamentos!D2:D2000="' + cat + '")*(Lançamentos!F2:F2000))'];
   });
   sheet.getRange(8, 2, categorias.length, 1).setFormulas(catFormulas);
+
+  // Fórmulas por categoria de receita (em lote)
+  var recFormulas = CONFIG.categoriasReceita.map(function(cat) {
+    return ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Receita")*(Lançamentos!D2:D2000="' + cat + '")*(Lançamentos!F2:F2000))'];
+  });
+  sheet.getRange(linhaRec + 1, 2, CONFIG.categoriasReceita.length, 1).setFormulas(recFormulas);
 
   // Fórmulas Necessidades × Desejos (coluna H = classificação)
   var lNec = linhaND + 2;  // linha "Necessidades"
@@ -340,9 +365,12 @@ function setupResumo(sheet) {
   // Formatação
   sheet.getRange(1, 1).setFontSize(14).setFontWeight("bold");
   sheet.getRange(7, 1).setFontWeight("bold");
+  sheet.getRange(linhaRec, 1).setFontWeight("bold");
   sheet.getRange(linhaND + 1, 1).setFontWeight("bold");
+  // Valores em R$
   sheet.getRange(3, 2, 4, 1).setNumberFormat("R$ #,##0.00");
   sheet.getRange(8, 2, categorias.length, 1).setNumberFormat("R$ #,##0.00");
+  sheet.getRange(linhaRec + 1, 2, CONFIG.categoriasReceita.length, 1).setNumberFormat("R$ #,##0.00");
   sheet.getRange(lNec, 2, 2, 1).setNumberFormat("R$ #,##0.00");
   sheet.getRange(lNec + 2, 2, 2, 1).setNumberFormat("0%");
 }
