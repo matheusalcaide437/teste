@@ -48,6 +48,24 @@
     },
     {
       "passo": 6,
+      "acao": "Se (condicional)",
+      "condicao": "tipo é igual a 'Despesa'",
+      "entao": {
+        "acao": "Escolher na lista",
+        "titulo": "Classificação do gasto",
+        "prompt": "É uma necessidade ou desejo?",
+        "opcoes": ["Necessidade", "Desejo"],
+        "variavel_saida": "classificacao"
+      },
+      "senao": {
+        "acao": "Definir variável",
+        "variavel_saida": "classificacao",
+        "valor": ""
+      },
+      "nota": "Passo 6 é condicional: só pergunta a classificação para Despesas"
+    },
+    {
+      "passo": 7,
       "acao": "Obter conteúdo de URL",
       "metodo": "POST",
       "url": "COLE_AQUI_A_URL_DO_WEB_APP",
@@ -60,12 +78,13 @@
         "categoria": "{{categoria}}",
         "descricao": "{{descricao}}",
         "valor": "{{valor}}",
-        "forma_pagamento": "{{forma_pagamento}}"
+        "forma_pagamento": "{{forma_pagamento}}",
+        "classificacao": "{{classificacao}}"
       },
       "variavel_saida": "resposta"
     },
     {
-      "passo": 7,
+      "passo": 8,
       "acao": "Se (condicional)",
       "condicao": "resposta contém 'ok'",
       "entao": {

@@ -34,7 +34,8 @@ var CONFIG = {
     "Assinaturas",
     "Educação"
   ],
-  formasPagamento: ["Pix", "Débito", "Crédito", "Dinheiro"]
+  formasPagamento: ["Pix", "Débito", "Crédito", "Dinheiro"],
+  classificacoes: ["Necessidade", "Desejo"]
 };
 
 // ============================================================
@@ -181,7 +182,8 @@ function gravarLancamento(payload) {
     payload.categoria,
     payload.descricao || "",
     Number(String(payload.valor).replace(",", ".")),
-    payload.forma_pagamento
+    payload.forma_pagamento,
+    payload.classificacao || ""   // coluna H — Necessidade ou Desejo
   ];
 
   sheet.appendRow(novaLinha);
@@ -206,6 +208,12 @@ function validar(payload) {
   }
   if (!payload.forma_pagamento || !CONFIG.formasPagamento.includes(payload.forma_pagamento)) {
     erros.push("'forma_pagamento' inválida. Opções: " + CONFIG.formasPagamento.join(", "));
+  }
+  // classificacao é obrigatória para Despesas
+  if (payload.tipo === "Despesa") {
+    if (!payload.classificacao || !CONFIG.classificacoes.includes(payload.classificacao)) {
+      erros.push("'classificacao' deve ser 'Necessidade' ou 'Desejo'");
+    }
   }
   return erros;
 }
@@ -255,7 +263,7 @@ function setupSheet(ss) {
   var lancamentos = ss.getSheetByName(CONFIG.sheetLancamentos) ||
                     ss.insertSheet(CONFIG.sheetLancamentos);
   lancamentos.clearContents();
-  var headers = [["Data", "Hora", "Tipo", "Categoria", "Descrição", "Valor (R$)", "Forma de Pagamento"]];
+  var headers = [["Data", "Hora", "Tipo", "Categoria", "Descrição", "Valor (R$)", "Forma de Pagamento", "Classificação"]];
   var headerRange = lancamentos.getRange(1, 1, 1, headers[0].length);
   headerRange.setValues(headers);
   headerRange.setFontWeight("bold").setBackground("#4A90D9").setFontColor("#FFFFFF");
@@ -283,6 +291,7 @@ function setupSheet(ss) {
 function setupResumo(sheet) {
   var categorias = CONFIG.categorias;
 
+  // ── Bloco 1: cabeçalho + totais gerais + por categoria ──
   var labels = [
     ["📊 RESUMO DO MÊS", ""],
     ["", ""],
@@ -293,24 +302,49 @@ function setupResumo(sheet) {
     ["📂 GASTOS POR CATEGORIA (mês atual)", ""]
   ];
   categorias.forEach(function(cat) { labels.push([cat, ""]); });
+
+  // ── Bloco 2: separador + Necessidades × Desejos ──
+  var linhaND = labels.length + 2; // linha de início do bloco ND (1-indexed, com espaço)
+  labels.push(["", ""]);
+  labels.push(["💡 NECESSIDADES × DESEJOS", ""]);
+  labels.push(["Necessidades", ""]);
+  labels.push(["Desejos", ""]);
+  labels.push(["% Necessidades", ""]);
+  labels.push(["% Desejos", ""]);
+
   sheet.getRange(1, 1, labels.length, 2).setValues(labels);
 
-  // Fórmulas do resumo em lote
+  // Fórmulas do resumo geral (em lote)
   sheet.getRange(3, 2, 3, 1).setFormulas([
     ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Receita")*(Lançamentos!F2:F2000))'],
     ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Despesa")*(Lançamentos!F2:F2000))'],
     ['=B3-B4']
   ]);
 
-  // Fórmulas por categoria em lote
+  // Fórmulas por categoria (em lote)
   var catFormulas = categorias.map(function(cat) {
     return ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Despesa")*(Lançamentos!D2:D2000="' + cat + '")*(Lançamentos!F2:F2000))'];
   });
   sheet.getRange(8, 2, categorias.length, 1).setFormulas(catFormulas);
 
+  // Fórmulas Necessidades × Desejos (coluna H = classificação)
+  var lNec = linhaND + 2;  // linha "Necessidades"
+  var lDes = linhaND + 3;  // linha "Desejos"
+  sheet.getRange(lNec, 2, 4, 1).setFormulas([
+    ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Despesa")*(Lançamentos!H2:H2000="Necessidade")*(Lançamentos!F2:F2000))'],
+    ['=SUMPRODUCT((MONTH(Lançamentos!A2:A2000)=MONTH(TODAY()))*(YEAR(Lançamentos!A2:A2000)=YEAR(TODAY()))*(Lançamentos!C2:C2000="Despesa")*(Lançamentos!H2:H2000="Desejo")*(Lançamentos!F2:F2000))'],
+    ['=IFERROR(B' + lNec + '/B4,0)'],
+    ['=IFERROR(B' + lDes + '/B4,0)']
+  ]);
+
+  // Formatação
   sheet.getRange(1, 1).setFontSize(14).setFontWeight("bold");
   sheet.getRange(7, 1).setFontWeight("bold");
-  sheet.getRange(3, 2, 3 + categorias.length, 1).setNumberFormat("R$ #,##0.00");
+  sheet.getRange(linhaND + 1, 1).setFontWeight("bold");
+  sheet.getRange(3, 2, 4, 1).setNumberFormat("R$ #,##0.00");
+  sheet.getRange(8, 2, categorias.length, 1).setNumberFormat("R$ #,##0.00");
+  sheet.getRange(lNec, 2, 2, 1).setNumberFormat("R$ #,##0.00");
+  sheet.getRange(lNec + 2, 2, 2, 1).setNumberFormat("0%");
 }
 
 // ============================================================
@@ -482,7 +516,9 @@ function criarAbaOrcamento(ss) {
   aba.getRange(linha, 2).setValue("TOTAL DESPESAS ORÇADAS")
     .setFontSize(13).setFontWeight("bold")
     .setFontColor(COR.textoTitulo).setBackground(COR.fundoTitulo).setVerticalAlignment("middle");
-  aba.getRange(linha, 3).setValue(totalOrcadoGeral)
+  // Fórmula para que o total orçado atualize automaticamente ao editar coluna C
+  const orcadoRef = Object.values(linhasPorCategoria).map(l => `C${l}`).join("+");
+  aba.getRange(linha, 3).setFormula(`=${orcadoRef}`)
     .setNumberFormat("R$ #.##0,00").setFontSize(13).setFontWeight("bold")
     .setFontColor(COR.corGasto).setBackground(COR.fundoTitulo)
     .setHorizontalAlignment("center").setVerticalAlignment("middle");
