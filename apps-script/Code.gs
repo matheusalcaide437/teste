@@ -17,7 +17,7 @@
 // CONFIGURAÇÃO DA API (iPhone Shortcut)
 // ============================================================
 var CONFIG = {
-  token: "TROQUE_POR_UM_TOKEN_SECRETO",
+  token: "minha-chave-financas-2026",
   timezone: "America/Sao_Paulo",
   sheetLancamentos: "Lançamentos",
   sheetResumo: "Resumo",
