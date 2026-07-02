@@ -1,4 +1,4 @@
-# Guia — Criar o Shortcut no iPhone
+# Guia — Criar o Shortcut no iPhone (versão completa)
 
 ## Pré-requisitos
 - iPhone com iOS 15 ou superior
@@ -7,137 +7,222 @@
 
 ---
 
-## Criar o Shortcut passo a passo
+## Estrutura dos passos
 
-### 1. Abrir o app Atalhos
-
-Abra o app **Atalhos** no iPhone e toque em **"+"** (canto superior direito) para criar um novo atalho.
-
-Toque no nome e renomeie para **"💰 Lançar Gasto"**.
+```
+ 1. Lista: Receita / Despesa  →  Escolher  →  Definir variável "tipo"
+ 2. Se tipo é "Receita"
+      Lista: Salário / Comissão de Vendas / Freelance / Extra / Bônus / Outros
+      Escolher de Lista
+      Definir variável "categoria"  ←  Item Selecionado (mágico do passo acima)
+    Caso Contrário
+      Lista: Saúde / Alimentação / Casa / Transporte / Antônio / Lazer / Dízimos e Ofertas / Assinaturas / Educação
+      Escolher de Lista
+      Definir variável "categoria"  ←  Item Selecionado (mágico do passo acima)
+    Terminar Se
+ 3. Pedir Texto  →  Definir variável "descricao"
+ 4. Pedir Número  →  Definir variável "valor"
+ 5. Lista: Pix / Crédito / Débito / Dinheiro  →  Escolher  →  Definir variável "forma_pagamento"
+ 6. Se tipo é "Despesa"
+      Lista: Necessidade / Desejo
+      Escolher de Lista
+      Definir variável "classificacao"  ←  Item Selecionado (mágico do passo acima)
+    Caso Contrário
+      Definir variável "classificacao"  ←  "" (texto vazio)
+    Terminar Se
+ 7. Obter conteúdo de URL  →  POST JSON  →  Definir variável "resposta"
+ 8. Se "resposta" contém "ok"
+      Mostrar notificação ✅
+    Caso Contrário
+      Mostrar alerta ❌
+    Terminar Se
+```
 
 ---
 
-### 2. Adicionar ação: Tipo do lançamento
+## Passo a passo detalhado
 
-1. Toque em **"Adicionar Ação"**
-2. Busque por **"Escolher na lista"**
-3. Configure:
-   - **Itens da lista**: `Despesa` / `Receita`
-   - **Solicitar**: `Tipo`
-4. Toque em **"Adicionar ao Atalho de Tela de Início"** no resultado e renomeie a variável para **`tipo`**
+### PASSO 1 — Tipo do lançamento
 
----
-
-### 3. Adicionar ação: Categoria
-
-1. Toque em **"+"** para nova ação
-2. Busque **"Escolher na lista"**
-3. Configure:
-   - **Itens**: `Alimentação`, `Transporte`, `Lazer`, `Saúde`, `Casa`, `Outros`
-   - **Solicitar**: `Categoria`
-4. Renomeie a variável de saída para **`categoria`**
+1. Abra o app **Atalhos** → toque em **"+"** → renomeie para **"💰 Lançar Gasto"**
+2. Toque em **"Adicionar Ação"** → busque **"Lista"**
+3. Adicione os itens: `Receita` e `Despesa`
+4. Adicione nova ação → busque **"Escolher de Lista"**
+5. Adicione nova ação → busque **"Definir Variável"**
+   - Nome: `tipo`
+   - Valor: toque no campo → selecione **"Item Selecionado"** (variável mágica do "Escolher de Lista" acima)
 
 ---
 
-### 4. Adicionar ação: Descrição (opcional)
+### PASSO 2 — Categoria (condicional por tipo)
 
-1. Nova ação → busque **"Pedir texto"**
+1. Nova ação → busque **"Se"**
+   - Entrada: variável `tipo`
+   - Condição: **é**
+   - Valor: `Receita`
+
+**Dentro do bloco "Se verdadeiro":**
+
+2. Nova ação → **"Lista"** com os itens:
+   - `Salário`
+   - `Comissão de Vendas`
+   - `Freelance / Extra`
+   - `Bônus`
+   - `Outros`
+3. Nova ação → **"Escolher de Lista"**
+4. Nova ação → **"Definir Variável"**
+   - Nome: `categoria`
+   - Valor: **"Item Selecionado"** (variável mágica do "Escolher de Lista" imediatamente acima)
+
+**Dentro do bloco "Caso Contrário":**
+
+5. Nova ação → **"Lista"** com os itens:
+   - `Saúde`
+   - `Alimentação`
+   - `Casa`
+   - `Transporte`
+   - `Antônio`
+   - `Lazer`
+   - `Dízimos e Ofertas`
+   - `Assinaturas`
+   - `Educação`
+6. Nova ação → **"Escolher de Lista"**
+7. Nova ação → **"Definir Variável"**
+   - Nome: `categoria`
+   - Valor: **"Item Selecionado"** (variável mágica do "Escolher de Lista" imediatamente acima)
+
+8. Feche o bloco com **"Terminar Se"**
+
+> ⚠️ **Importante**: em ambos os blocos, o valor do "Definir Variável" deve ser a **variável mágica** (ícone laranja de lista) do "Escolher de Lista" logo acima — não o nome escrito `categoria`.
+
+---
+
+### PASSO 3 — Descrição (opcional)
+
+1. Nova ação → **"Pedir Texto"**
+   - Prompt: `Descrição (opcional)`
+2. Nova ação → **"Definir Variável"**
+   - Nome: `descricao`
+   - Valor: variável mágica do "Pedir Texto" acima
+
+---
+
+### PASSO 4 — Valor
+
+1. Nova ação → **"Pedir Número"**
+   - Prompt: `Valor R$`
+2. Nova ação → **"Definir Variável"**
+   - Nome: `valor`
+   - Valor: variável mágica do "Pedir Número" acima
+
+---
+
+### PASSO 5 — Forma de pagamento
+
+1. Nova ação → **"Lista"** com os itens:
+   - `Pix`
+   - `Crédito`
+   - `Débito`
+   - `Dinheiro`
+2. Nova ação → **"Escolher de Lista"**
+3. Nova ação → **"Definir Variável"**
+   - Nome: `forma_pagamento`
+   - Valor: variável mágica do "Escolher de Lista" acima
+
+---
+
+### PASSO 6 — Classificação (apenas para Despesa)
+
+1. Nova ação → **"Se"**
+   - Entrada: variável `tipo`
+   - Condição: **é**
+   - Valor: `Despesa`
+
+**Dentro do bloco "Se verdadeiro":**
+
+2. Nova ação → **"Lista"** com os itens:
+   - `Necessidade`
+   - `Desejo`
+3. Nova ação → **"Escolher de Lista"**
+4. Nova ação → **"Definir Variável"**
+   - Nome: `classificacao`
+   - Valor: variável mágica do "Escolher de Lista" acima
+
+**Dentro do bloco "Caso Contrário":**
+
+5. Nova ação → **"Definir Variável"**
+   - Nome: `classificacao`
+   - Valor: **texto vazio** (deixe o campo em branco)
+
+6. Feche com **"Terminar Se"**
+
+---
+
+### PASSO 7 — Enviar para a API
+
+1. Nova ação → **"Obter Conteúdo de URL"**
 2. Configure:
-   - **Solicitar**: `Descrição (opcional)`
-   - **Entrada padrão**: deixe vazio
-3. Renomeie a variável para **`descricao`**
-
----
-
-### 5. Adicionar ação: Valor
-
-1. Nova ação → busque **"Pedir número"**
-2. Configure:
-   - **Solicitar**: `Valor (R$)`
-3. Renomeie a variável para **`valor`**
-
----
-
-### 6. Adicionar ação: Forma de pagamento
-
-1. Nova ação → busque **"Escolher na lista"**
-2. Configure:
-   - **Itens**: `Pix`, `Débito`, `Crédito`, `Dinheiro`
-   - **Solicitar**: `Forma de pagamento`
-3. Renomeie a variável para **`forma_pagamento`**
-
----
-
-### 7. Adicionar ação: Enviar para a API
-
-1. Nova ação → busque **"Obter conteúdo de URL"**
-2. Configure:
-   - **URL**: cole a URL do seu Web App
+   - **URL**: `https://script.google.com/macros/s/AKfycbxMp1qxP6E08ziJ4lgWJ71FuzlFytuBXWgB9JCc6WSBPsJF-ekUwU4RvNC8aoQl6Asu/exec`
    - **Método**: `POST`
-3. Toque em **"Mostrar mais"** e ative **"Cabeçalhos de solicitação"**:
-   - Chave: `Content-Type` / Valor: `application/json`
-4. Ative **"Corpo da solicitação"** → selecione **JSON**
-5. Adicione os seguintes pares chave/valor (toque em **"+"** para cada um):
+3. Expanda **"Cabeçalhos"** — deixe **vazio** (não adicione nenhum cabeçalho)
+4. Em **"Pedir Corpo"** → selecione **JSON**
+5. Adicione os pares chave/valor:
 
 | Chave | Valor |
 |-------|-------|
-| `token` | `SUA_CHAVE_AQUI` (texto fixo) |
+| `token` | `minha-chave-financas-2026` (texto fixo) |
 | `tipo` | variável `tipo` |
 | `categoria` | variável `categoria` |
 | `descricao` | variável `descricao` |
 | `valor` | variável `valor` |
 | `forma_pagamento` | variável `forma_pagamento` |
+| `classificacao` | variável `classificacao` |
 
-6. Renomeie a variável de saída para **`resposta`**
+6. Nova ação → **"Definir Variável"**
+   - Nome: `resposta`
+   - Valor: variável mágica de **"Conteúdos do URL"** (o resultado do passo acima)
 
 ---
 
-### 8. Adicionar ação: Notificação de sucesso/erro
+### PASSO 8 — Notificação de resultado
 
-1. Nova ação → busque **"Se"** (condicional)
-2. Configure:
-   - **Entrada**: variável `resposta`
-   - **Condição**: `contém`
-   - **Valor**: `"ok"`
-3. Dentro do bloco **"Se verdadeiro"**:
-   - Adicione ação **"Mostrar notificação"**
-   - **Título**: `✅ Lançamento salvo!`
-   - **Corpo**: `[tipo] · [categoria] · R$ [valor]` (insira as variáveis tocando nelas)
-4. Dentro do bloco **"Caso contrário"**:
-   - Adicione ação **"Mostrar alerta"**
-   - **Mensagem**: `Erro: [resposta]`
+1. Nova ação → **"Se"**
+   - Entrada: variável `resposta`
+   - Condição: **contém**
+   - Valor: `ok`
+
+**Dentro do "Se verdadeiro":**
+
+2. Nova ação → **"Mostrar Notificação"**
+   - Título: `✅ Lançamento salvo!`
+   - Corpo: variável `tipo` + ` · ` + variável `categoria` + ` · R$ ` + variável `valor`
+
+**Dentro do "Caso Contrário":**
+
+3. Nova ação → **"Mostrar Alerta"**
+   - Mensagem: `Erro: ` + variável `resposta`
+
+4. Feche com **"Terminar Se"**
+
+---
+
+## Regra de ouro: como usar "Definir Variável" corretamente
+
+Em todos os passos, o **valor** do "Definir Variável" deve ser a **variável mágica** da ação imediatamente acima — não um nome digitado.
+
+Para selecionar a variável mágica:
+1. Toque no campo de valor do "Definir Variável"
+2. Toque no ícone de variáveis (parte inferior da tela)
+3. Role até encontrar a ação desejada (ex: "Escolher de Lista", "Pedir Texto")
+4. Toque nela — aparece como um chip colorido com o ícone da ação
+
+Isso garante que o valor capturado em cada passo seja passado corretamente para o POST.
 
 ---
 
 ## Adicionar à Tela Inicial
 
-Para acesso com 1 toque:
-
-1. Com o Shortcut aberto, toque nos **3 pontos** (···) no canto superior direito
+1. Com o Shortcut aberto, toque nos **···** (canto superior direito)
 2. Toque em **"Adicionar à Tela de Início"**
 3. Escolha um ícone e nome (ex: **💰 Gastos**)
 4. Toque em **"Adicionar"**
-
-Um ícone aparecerá na sua tela inicial — toque nele para lançar um gasto em segundos.
-
----
-
-## Atalhos rápidos (variações)
-
-Você pode duplicar o Shortcut e pré-definir valores para lançamentos frequentes:
-
-| Nome | Pré-definição |
-|------|--------------|
-| ☕ Café | Tipo = Despesa, Categoria = Alimentação |
-| 🚗 Gasolina | Tipo = Despesa, Categoria = Transporte |
-| 💼 Salário | Tipo = Receita, Categoria = Outros |
-
-Para pré-definir: no passo da lista, ative **"Selecionar múltiplos"** como `false` e defina um valor padrão, ou simplesmente remova esse passo e passe o valor fixo direto no JSON do passo 7.
-
----
-
-## Dicas de uso
-
-- O Shortcut funciona com a tela bloqueada se você habilitar **"Mostrar na tela bloqueada"** nas configurações do atalho.
-- Use o widget de Atalhos na tela inicial para acesso ainda mais rápido.
-- O lançamento aparece na planilha em tempo real — sem precisar abrir nenhum app.
