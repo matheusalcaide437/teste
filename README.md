@@ -38,8 +38,9 @@ apps-script/
 shortcut/
   estrutura.json    → Documentação dos passos do iPhone Shortcut
 docs/
-  setup.md          → Como configurar Google Sheets e fazer deploy do script
-  shortcut-guide.md → Como criar o Shortcut no iPhone passo a passo
+  setup.md                      → Como configurar Google Sheets e fazer deploy do script
+  shortcut-guide.md             → Como criar o Shortcut no iPhone passo a passo
+  replicar-para-outra-pessoa.md → Como criar uma cópia independente para outra pessoa
 ```
 
 ## Início rápido
@@ -48,6 +49,10 @@ docs/
 2. **Crie o Shortcut** — siga [docs/shortcut-guide.md](docs/shortcut-guide.md)
 3. **Adicione o Shortcut à tela inicial** do iPhone
 4. Pronto — toque no ícone, preencha 4 campos, lançamento salvo
+
+## Replicar para outra pessoa
+
+Para montar uma cópia independente (planilha, token, categorias e Shortcut próprios) para um familiar, siga [docs/replicar-para-outra-pessoa.md](docs/replicar-para-outra-pessoa.md).
 
 ## Segurança
 

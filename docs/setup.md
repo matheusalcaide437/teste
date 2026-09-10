@@ -43,12 +43,14 @@ minha-chave-financas-2026
 
 ## Passo 4 — Configurar a planilha (uma única vez)
 
-1. No editor do Apps Script, selecione a função **`setupSheet`** no menu suspenso de funções.
+1. No editor do Apps Script, selecione a função **`configurarSistema`** no menu suspenso de funções.
 2. Clique em **Executar**.
 3. Na primeira execução, o Google pedirá permissão — clique em **Revisar permissões** → **Permitir**.
-4. Uma caixa de diálogo confirmará: *"✅ Planilha configurada com sucesso!"*
+4. Uma notificação no canto da planilha confirmará: *"✅ Sistema configurado!"*
 
-Isso criará as abas **Lançamentos**, **Resumo** e **Config** com cabeçalhos e fórmulas prontas.
+Isso criará as abas **Lançamentos**, **Resumo**, **Config** e **Orçamento**, o painel visual e o menu **💰 Orçamento**.
+
+> ⚠️ `configurarSistema` limpa a aba **Lançamentos**. Execute apenas no primeiro setup (ou quando quiser zerar os dados).
 
 ---
 
@@ -118,4 +120,4 @@ Toda vez que modificar o `Code.gs`, você precisa fazer um novo deploy:
 | `Token inválido` | Verifique se o token no Shortcut é idêntico ao do `Code.gs` |
 | `categoria inválida` | Confirme que a categoria enviada está exatamente igual às listadas em `CONFIG.categorias` |
 | Planilha não atualiza | Verifique se fez re-deploy após editar o script |
-| Erro de permissão | Re-execute `setupSheet` e aceite as permissões novamente |
+| Erro de permissão | Re-execute `configurarSistema` e aceite as permissões novamente |
