@@ -75,7 +75,12 @@ https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXX/exec
 
 ## Passo 6 — Testar o endpoint
 
-Você pode testar via terminal com `curl`:
+**Sem terminal:** no editor do Apps Script, execute a função **`testarWebApp`** (ou use o menu
+**💰 Orçamento → 🧪 Testar Web App** na planilha). Ela valida a configuração, faz um POST real
+na URL publicada e mostra o resultado. Em caso de sucesso grava uma linha "TESTE" em
+**Lançamentos** e exibe a URL e o token para usar no Shortcut.
+
+**Com terminal (`curl`):**
 
 ```bash
 curl -L -X POST "COLE_AQUI_A_URL_DO_WEB_APP" \
@@ -86,9 +91,12 @@ curl -L -X POST "COLE_AQUI_A_URL_DO_WEB_APP" \
     "categoria": "Alimentação",
     "descricao": "Teste de integração",
     "valor": 25.50,
-    "forma_pagamento": "Pix"
+    "forma_pagamento": "Pix",
+    "classificacao": "Necessidade"
   }'
 ```
+
+No Windows (PowerShell), use `Invoke-RestMethod -Method Post -Uri "URL" -ContentType "application/json" -Body '{...}'` com o mesmo JSON.
 
 Resposta esperada:
 
@@ -120,4 +128,5 @@ Toda vez que modificar o `Code.gs`, você precisa fazer um novo deploy:
 | `Token inválido` | Verifique se o token no Shortcut é idêntico ao do `Code.gs` |
 | `categoria inválida` | Confirme que a categoria enviada está exatamente igual às listadas em `CONFIG.categorias` |
 | Planilha não atualiza | Verifique se fez re-deploy após editar o script |
+| Página de login / HTML na resposta | Implantação com "Quem tem acesso: Somente eu" — troque para **Qualquer pessoa** e publique Nova versão |
 | Erro de permissão | Re-execute `configurarSistema` e aceite as permissões novamente |

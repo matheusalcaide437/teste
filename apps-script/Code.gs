@@ -790,6 +790,8 @@ function criarMenu() {
     .addItem("📊 Ir para Aba Orçamento", "irParaOrcamento")
     .addSeparator()
     .addItem("📅 Resumo do Mês Atual", "resumoMesAtual")
+    .addSeparator()
+    .addItem("🧪 Testar Web App (Shortcut)", "testarWebApp")
     .addToUi();
 }
 
@@ -853,6 +855,140 @@ function resumoMesAtual() {
   linhas.push(`📊 Orçamento usado: ${pctTotal}%`);
 
   SpreadsheetApp.getUi().alert(linhas.join("\n"));
+}
+
+// ============================================================
+// TESTE DO WEB APP — substitui o curl do passo 6 do setup
+// ============================================================
+// Execute "testarWebApp" no editor (ou menu 💰 Orçamento > 🧪 Testar Web App).
+// Ele confere a configuração local e depois faz um POST real na URL publicada,
+// exatamente como o Shortcut do iPhone faria. Grava uma linha "TESTE" que você
+// pode apagar depois.
+
+function testarWebApp() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var problemas = diagnosticarConfiguracao_(ss);
+  var linhas = [];
+
+  if (problemas.length > 0) {
+    linhas.push("❌ Corrija antes de testar o Web App:\n");
+    problemas.forEach(function(p) { linhas.push("• " + p); });
+    mostrarResultado_(linhas.join("\n"));
+    return;
+  }
+  linhas.push("✅ Configuração local OK (token, abas, categorias espelhadas).");
+
+  var url = ScriptApp.getService().getUrl();
+  if (!url) {
+    linhas.push("\n❌ Nenhuma implantação encontrada.\nFaça: Implantar → Nova implantação → App da Web → Quem tem acesso: Qualquer pessoa.");
+    mostrarResultado_(linhas.join("\n"));
+    return;
+  }
+  linhas.push("🔗 URL publicada:\n" + url);
+
+  var payload = {
+    token: CONFIG.token,
+    tipo: "Despesa",
+    categoria: CONFIG.categorias[0],
+    descricao: "TESTE — pode apagar",
+    valor: 1,
+    forma_pagamento: CONFIG.formasPagamento[0],
+    classificacao: CONFIG.classificacoes[0]
+  };
+
+  var resp;
+  try {
+    resp = UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      followRedirects: true,
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    linhas.push("\n❌ Falha de rede ao chamar a URL: " + err.message);
+    mostrarResultado_(linhas.join("\n"));
+    return;
+  }
+
+  var code = resp.getResponseCode();
+  var body = resp.getContentText();
+  linhas.push("\nHTTP " + code);
+
+  if (body.indexOf("<!DOCTYPE html>") === 0 || body.indexOf("<html") >= 0) {
+    if (body.indexOf("accounts.google.com") >= 0 || body.indexOf("ServiceLogin") >= 0) {
+      linhas.push("❌ A URL exige login. Na implantação, 'Quem tem acesso' precisa ser 'Qualquer pessoa'.\n" +
+                  "Implantar → Gerenciar implantações → lápis → Quem tem acesso: Qualquer pessoa → Nova versão → Implantar.");
+    } else if (body.indexOf("doPost") >= 0) {
+      linhas.push("❌ A versão publicada não tem a função doPost. Publique uma NOVA VERSÃO:\n" +
+                  "Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar.");
+    } else {
+      linhas.push("❌ A resposta veio em HTML (página de erro do Google), não em JSON.\n" +
+                  "Quase sempre é implantação desatualizada: publique uma Nova versão e tente de novo.\n\nTrecho: " +
+                  body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").substring(0, 300));
+    }
+    mostrarResultado_(linhas.join("\n"));
+    return;
+  }
+
+  var json;
+  try { json = JSON.parse(body); } catch (e) {
+    linhas.push("❌ Resposta não é JSON válido:\n" + body.substring(0, 300));
+    mostrarResultado_(linhas.join("\n"));
+    return;
+  }
+
+  if (json.status === "ok") {
+    linhas.push("✅ SUCESSO! Linha " + json.linha + " gravada na aba '" + CONFIG.sheetLancamentos + "'.");
+    linhas.push("\nAgora use no Shortcut do iPhone:\n• URL: " + url + "\n• token: " + CONFIG.token);
+    linhas.push("\nApague a linha de teste quando quiser.");
+  } else {
+    linhas.push("❌ O Web App respondeu erro: " + json.message);
+    if (String(json.message).indexOf("Token") >= 0) {
+      linhas.push("→ A versão publicada tem um token diferente do código atual. Publique uma Nova versão.");
+    }
+  }
+  mostrarResultado_(linhas.join("\n"));
+}
+
+// Confere o que costuma dar errado antes de chegar no iPhone.
+function diagnosticarConfiguracao_(ss) {
+  var problemas = [];
+
+  if (!CONFIG.token || CONFIG.token === "TROQUE_POR_UM_TOKEN_SECRETO" || CONFIG.token.length < 8) {
+    problemas.push("CONFIG.token está vazio, padrão ou muito curto. Defina uma frase longa e sem espaços.");
+  }
+
+  if (!ss.getSheetByName(CONFIG.sheetLancamentos)) {
+    problemas.push("Aba '" + CONFIG.sheetLancamentos + "' não existe. Execute 'configurarSistema' primeiro.");
+  }
+
+  var orcNomes = CONFIG_ORCAMENTO.categorias.map(function(c) { return c.nome; });
+  CONFIG.categorias.forEach(function(cat) {
+    if (orcNomes.indexOf(cat) < 0) {
+      problemas.push("Categoria '" + cat + "' está em CONFIG.categorias mas não em CONFIG_ORCAMENTO.categorias.");
+    }
+  });
+  orcNomes.forEach(function(nome) {
+    if (CONFIG.categorias.indexOf(nome) < 0) {
+      problemas.push("Categoria '" + nome + "' está em CONFIG_ORCAMENTO.categorias mas não em CONFIG.categorias.");
+    }
+  });
+
+  if (CONFIG.categorias.length === 0) problemas.push("CONFIG.categorias está vazio.");
+  if (CONFIG.formasPagamento.length === 0) problemas.push("CONFIG.formasPagamento está vazio.");
+
+  return problemas;
+}
+
+// Mostra em alerta quando há interface (planilha aberta); senão, no log do editor.
+function mostrarResultado_(texto) {
+  console.log(texto);
+  try {
+    SpreadsheetApp.getUi().alert("🧪 Teste do Web App", texto, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {
+    // Executado pelo editor sem UI da planilha — o resultado está no "Registro de execução".
+  }
 }
 
 // ============================================================

@@ -156,7 +156,18 @@ Agora **salve** (`Ctrl+S`).
 
 ### Passo 6 — Testar antes de mexer no iPhone
 
-No terminal (ou peça para o Claude rodar), troque URL, token e uma categoria dela:
+**Jeito fácil (sem terminal):** no editor do Apps Script, selecione a função **`testarWebApp`**
+e clique em **Executar** (ou, na planilha, menu **💰 Orçamento → 🧪 Testar Web App**).
+Ela confere token, abas e categorias, faz um POST real na URL publicada e mostra o
+resultado no **Registro de execução** (ou num alerta, se rodar pelo menu). Se der certo,
+aparece `✅ SUCESSO! Linha N gravada` mais a URL e o token prontos para copiar no Shortcut.
+Apague a linha "TESTE" depois.
+
+**Confirmação rápida no navegador:** cole a URL `.../exec` na barra de endereços. Deve
+aparecer um texto como `{"status":"ok","totalLancamentos":0}`. Se aparecer página de login
+do Google ou erro em HTML, o problema é a implantação (veja a tabela abaixo).
+
+**Jeito alternativo (terminal):**
 
 ```bash
 curl -L -X POST "URL_DO_WEB_APP_DELA" \
@@ -164,11 +175,26 @@ curl -L -X POST "URL_DO_WEB_APP_DELA" \
   -d '{"token":"TOKEN_DELA","tipo":"Despesa","categoria":"Farmácia","descricao":"Teste","valor":10,"forma_pagamento":"Pix","classificacao":"Necessidade"}'
 ```
 
-Esperado: `{"status":"ok","linha":2}` e uma linha nova em **Lançamentos**.
-Depois apague essa linha de teste.
+No **Windows (PowerShell)** o `curl` é outro programa e o comando acima falha. Use:
 
-Se vier `Token inválido` ou `'categoria' inválida`, o erro está no Passo 3 — corrija, salve e
-faça **Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar**.
+```powershell
+Invoke-RestMethod -Method Post -Uri "URL_DO_WEB_APP_DELA" -ContentType "application/json" -Body '{"token":"TOKEN_DELA","tipo":"Despesa","categoria":"Farmácia","descricao":"Teste","valor":10,"forma_pagamento":"Pix","classificacao":"Necessidade"}'
+```
+
+Esperado: `{"status":"ok","linha":2}` e uma linha nova em **Lançamentos**.
+
+**Se o teste falhar:**
+
+| O que aparece | Causa | Solução |
+|---------------|-------|---------|
+| Página de login do Google / HTML enorme | "Quem tem acesso" ficou em **Somente eu** | Implantar → Gerenciar implantações → lápis → Quem tem acesso: **Qualquer pessoa** → Nova versão → Implantar |
+| `Script function not found: doPost` | Implantou antes de colar/salvar o código | Salve o código e publique uma **Nova versão** |
+| `Token inválido` | Token do comando ≠ token da versão publicada | Confira o `CONFIG.token` e publique uma **Nova versão** (editar o código não atualiza o Web App sozinho) |
+| `'categoria' inválida` | Categoria do teste não está em `CONFIG.categorias` da versão publicada | Use uma categoria exata da lista ou publique Nova versão |
+| `'classificacao' deve ser...` | Faltou `classificacao` no corpo da Despesa | Inclua `"classificacao":"Necessidade"` |
+| Resposta vazia / `301` / `302` | `curl` sem `-L` (o Google redireciona) | Adicione `-L` |
+| Erro de sintaxe no PowerShell | `curl` do Windows não aceita `-d` com aspas simples | Use o `Invoke-RestMethod` acima ou o `testarWebApp` |
+| `Authorization is required` ao rodar `testarWebApp` | Primeira vez usando `UrlFetchApp` | Clique em Revisar permissões → Avançado → Acessar → Permitir, e execute de novo |
 
 ---
 
