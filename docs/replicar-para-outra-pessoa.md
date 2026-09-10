@@ -156,7 +156,8 @@ Agora **salve** (`Ctrl+S`).
 
 ### Passo 6 — Testar antes de mexer no iPhone
 
-**Jeito fácil (sem terminal):** no editor do Apps Script, selecione a função **`testarWebApp`**
+**Jeito fácil (sem terminal):** cole a URL `/exec` do Passo 5 em `CONFIG.webAppUrl` (topo do código) e salve.
+Depois, no editor do Apps Script, selecione a função **`testarWebApp`**
 e clique em **Executar** (ou, na planilha, menu **💰 Orçamento → 🧪 Testar Web App**).
 Ela confere token, abas e categorias, faz um POST real na URL publicada e mostra o
 resultado no **Registro de execução** (ou num alerta, se rodar pelo menu). Se der certo,

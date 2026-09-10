@@ -75,7 +75,7 @@ https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXX/exec
 
 ## Passo 6 — Testar o endpoint
 
-**Sem terminal:** no editor do Apps Script, execute a função **`testarWebApp`** (ou use o menu
+**Sem terminal:** cole a URL `/exec` do Passo 5 em `CONFIG.webAppUrl` (topo do código), salve e execute a função **`testarWebApp`** (ou use o menu
 **💰 Orçamento → 🧪 Testar Web App** na planilha). Ela valida a configuração, faz um POST real
 na URL publicada e mostra o resultado. Em caso de sucesso grava uma linha "TESTE" em
 **Lançamentos** e exibe a URL e o token para usar no Shortcut.

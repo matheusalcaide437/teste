@@ -18,6 +18,9 @@
 // ============================================================
 var CONFIG = {
   token: "minha-chave-financas-2026",
+  // URL do Web App publicado (termina em /exec). Copie de Implantar > Gerenciar implantações.
+  // Usada apenas por testarWebApp; o Shortcut usa a mesma URL.
+  webAppUrl: "",
   timezone: "America/Sao_Paulo",
   sheetLancamentos: "Lançamentos",
   sheetResumo: "Resumo",
@@ -878,9 +881,15 @@ function testarWebApp() {
   }
   linhas.push("✅ Configuração local OK (token, abas, categorias espelhadas).");
 
-  var url = ScriptApp.getService().getUrl();
-  if (!url) {
-    linhas.push("\n❌ Nenhuma implantação encontrada.\nFaça: Implantar → Nova implantação → App da Web → Quem tem acesso: Qualquer pessoa.");
+  // ScriptApp.getService().getUrl() devolve a URL /dev quando rodado pelo editor,
+  // que exige login e responde 401. O Shortcut usa a URL /exec da implantação,
+  // então ela precisa ser informada em CONFIG.webAppUrl.
+  var url = String(CONFIG.webAppUrl || "").trim();
+  if (!url || url.indexOf("/exec") < 0) {
+    linhas.push("\n❌ Informe a URL /exec em CONFIG.webAppUrl (topo do código).\n" +
+                "Onde pegar: Implantar → Gerenciar implantações → copie a 'URL do app da Web' (termina em /exec).\n" +
+                "Se ainda não existe implantação: Implantar → Nova implantação → App da Web → " +
+                "Executar como: Eu mesmo → Quem tem acesso: Qualquer pessoa.");
     mostrarResultado_(linhas.join("\n"));
     return;
   }
